@@ -1,7 +1,7 @@
 name: MIR shared database foundation
 on:
   pull_request:
-    paths: ['supabase/**', 'tools/database/**', 'dist/mir-local-backup.js', 'tests/mir-database.cjs', 'tests/mir-local-backup*.cjs', '.github/workflows/shared-foundation.yml']
+    paths: ['supabase/**', 'tools/database/**', 'tools/validation/**', 'tests/mir-live-validation.cjs', 'dist/mir-local-backup.js', 'tests/mir-database.cjs', 'tests/mir-local-backup*.cjs', '.github/workflows/shared-foundation.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -19,3 +19,5 @@ jobs:
         working-directory: tools/database
       - run: node tests/mir-database.cjs
       - run: node tests/mir-local-backup.cjs
+      - run: node tests/mir-live-validation.cjs
+      - run: node --check tools/validation/real-supabase.cjs

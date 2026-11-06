@@ -155,9 +155,11 @@ test('Socle PostgreSQL : contraintes, RLS et sauvegardes',async t=>{
       await actor(id(2),sql,[id(10),id(94),id(40),employee.catalogue[0].revision,{...config,chantier:jid}]);
       await reject(id(4),'select public.mir_shared_snapshot($1)',[id(10)],'42501');
     });
+    // Proposed repair is evaluated ONLY in this disposable local database.
+    await db.exec(fs.readFileSync(path.join(__dirname,'../supabase/proposals/202611060005_preserve_version_options.sql'),'utf8'));
     await t.test('Import explicite sans doublon et nouvelle version sans écrasement',async()=>{
       const M=require('../dist/production-model.js'),template=M.createTemplate({kind:'profile',template:'l',unit:'in',dimensions:{A:3,B:2}},{id:'local',name:'Solin'}).template;
-      const record={id:'local',name:'Solin',currentVersion:1,versions:[template]};
+      const record={id:'local',name:'Solin',currentVersion:1,versions:[template],allowed:{materials:['aluminium'],colorSystems:['manufacturer']}};
       const query='select public.mir_import_master($1,$2) as id';
       await reject(id(2),query,[id(10),record],'42501');
       const model=(await actor(id(1),query,[id(10),record]))[0].id;
@@ -167,6 +169,8 @@ test('Socle PostgreSQL : contraintes, RLS et sauvegardes',async t=>{
       await actor(id(1),'select public.mir_add_master_version($1,$2,1,$3)',[id(10),model,next]);
       const versions=await actor(id(1),'select version from mir_core.model_versions where model_id=$1 order by version',[model]);assert.deepEqual(versions.map(r=>r.version),[1,2]);
       const p=(await actor(id(1),'select * from mir_core.model_publications where model_id=$1',[model]))[0];assert.equal(p.boutique,false);assert.equal(p.store,false);assert.equal(p.revision,2);
+      const nextSpec=(await actor(id(1),'select specification from mir_core.model_versions where model_id=$1 and version=2',[model]))[0].specification;assert.deepEqual(nextSpec.allowed,record.allowed,'une révision ne doit pas élargir les métaux autorisés');
+      const originalSpec=(await actor(id(1),'select specification from mir_core.model_versions where model_id=$1 and version=1',[model]))[0].specification;assert.deepEqual(originalSpec.template,template,'la version originale reste intacte');
     });
     await t.test('J à soffite 12 pi : demande de soumission sans prix inventé',async()=>{
       const M=require('../dist/production-model.js'),t=M.createTemplate({kind:'profile',template:'j',unit:'in',dimensions:{A:1,B:3,C:1}},{id:'j-soffite',name:'J à soffite'}).template;
