@@ -1,0 +1,47 @@
+name: MIR Entrepôt QR — validation isolée
+on:
+  push:
+    branches:
+      - moon/mir-entrepot-qr-inventaire-20261107
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'dist/entrepot.*'
+      - 'dist/mir-warehouse-*'
+      - 'dist/vendor/qrcode.min.js'
+      - 'dist/vendor/THIRD_PARTY_LICENSES.txt'
+      - 'supabase/proposals/202611070006_warehouse_stock_qr.sql'
+      - 'tests/mir-warehouse-*'
+      - '.github/workflows/mir-entrepot-qr.yml'
+permissions:
+  contents: read
+jobs:
+  warehouse:
+    name: Warehouse core, safe RPC client, responsive simulated-browser checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Syntax and safe domain rules
+        run: |
+          node --check dist/mir-warehouse-core.js
+          node --check dist/mir-warehouse-client.js
+          node --check dist/entrepot-app.js
+          node --check dist/vendor/qrcode.min.js
+          node --check tests/mir-warehouse-core.cjs
+          node --check tests/mir-warehouse-client.cjs
+          node --check tests/mir-warehouse-browser.cjs
+          node --check tests/mir-warehouse-sql.cjs
+          node tests/mir-warehouse-core.cjs
+          node tests/mir-warehouse-client.cjs
+          node tests/mir-warehouse-sql.cjs
+      - name: Browser flow with explicit simulated Supabase RPC, not hosted Auth
+        run: |
+          npm install --no-save playwright@1.58.2
+          node tests/mir-warehouse-browser.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mir-entrepot-qr-browser-captures
+          path: artifacts/mir-entrepot-*.png
+          if-no-files-found: ignore

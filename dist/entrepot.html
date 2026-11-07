@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="fr-CA"><head>
+ <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+ <meta name="robots" content="noindex,nofollow">
+ <title>Entrepôt MIR — Inventaire et livraisons</title>
+ <link rel="stylesheet" href="mir-home-premium.css?v=20261105">
+ <link rel="stylesheet" href="mir-client-header.css?v=1-harmony">
+ <link rel="stylesheet" href="mir-client-signature.css?v=1-harmony">
+ <link rel="stylesheet" href="entrepot.css?v=1">
+ <script src="shared-config.js" defer></script>
+ <script src="vendor/supabase-client.js" defer></script>
+ <script src="vendor/qrcode.min.js" defer></script>
+ <script src="employee-store-model.js" defer></script>
+ <script src="mir-warehouse-core.js?v=1" defer></script>
+ <script src="mir-warehouse-client.js?v=1" defer></script>
+ <script src="entrepot-app.js?v=1" defer></script>
+</head>
+<body class="mir-signature mir-warehouse">
+<header class="mir-warehouse-header">
+ <a href="index.html" aria-label="Retour à l’accueil MIR"><img src="assets/MIR-logo-officiel-original.svg" alt="Les Revêtements MIR" width="220" height="55"></a>
+ <div><span>ESPACE ÉQUIPE</span><h1>Entrepôt et inventaire</h1></div>
+ <nav aria-label="Autres espaces MIR"><a href="production.html?view=models">Mes pliages</a><a href="chantier.html">Commandes employés</a><a href="index.html">Accueil</a></nav>
+</header>
+<main class="mir-warehouse-main">
+ <p id="wh-status" role="status" aria-live="polite">Vérification de la connexion…</p>
+ <section id="wh-login" class="wh-card wh-login" hidden>
+  <div><p class="wh-kicker">ACCÈS SÉCURISÉ</p><h2>Connexion entrepôt</h2><p>Connecte-toi avec ton compte MIR autorisé. Le scan d’un QR ne donne jamais accès au stock sans connexion.</p></div>
+  <form id="wh-login-form"><label>Courriel<input type="email" name="email" autocomplete="username" required></label>
+   <label>Mot de passe<input type="password" name="password" autocomplete="current-password" required></label>
+   <button type="submit" class="wh-primary">Se connecter</button></form>
+ </section>
+ <section id="wh-workspace" hidden>
+  <div class="wh-topbar"><label>Organisation MIR <select id="wh-org"></select></label><div class="wh-top-actions"><button id="wh-refresh" type="button">Actualiser</button><button id="wh-signout" type="button">Déconnexion</button></div></div>
+  <div class="wh-grid">
+   <div class="wh-main-panel">
+    <section class="wh-card wh-scan">
+     <p class="wh-kicker">INVENTAIRE · QR</p><h2>Scanner une référence</h2>
+     <form id="wh-scan-form"><label>Code QR ou référence copiée
+       <input id="wh-qr-input" type="text" autocomplete="off" placeholder="Scanne le QR avec ton téléphone ou colle son lien" required>
+      </label><button type="submit" class="wh-primary">Ouvrir la fiche</button></form>
+     <p class="wh-hint">Tu peux scanner l’étiquette avec l’appareil photo du téléphone : elle ouvre directement cette fiche. Un lecteur QR USB fonctionne aussi.</p>
+     <button id="wh-camera-start" type="button" hidden>Scanner avec la caméra</button>
+     <div id="wh-camera" hidden><video id="wh-camera-video" autoplay muted playsinline></video><button id="wh-camera-stop" type="button">Arrêter la caméra</button></div>
+    </section>
+    <section id="wh-detail" class="wh-card" hidden>
+      <div class="wh-detail-head"><div><p class="wh-kicker">FICHE DE STOCK</p><h2 id="wh-item-name"></h2><p id="wh-item-sku"></p></div><button type="button" id="wh-print">Imprimer l’étiquette QR</button></div>
+      <div class="wh-stats">
+       <div><span>Stock physique</span><strong id="wh-stock-qty">—</strong></div>
+       <div><span>À livrer (commandes affichées)</span><strong id="wh-remaining-total">—</strong></div>
+       <div><span>Unité</span><strong id="wh-unit">—</strong></div>
+      </div>
+      <label class="wh-card-label" for="wh-order-select">Commande à préparer <small>(facultatif pour une correction d’inventaire)</small></label>
+      <select id="wh-order-select"></select>
+      <div id="wh-current-order" class="wh-order-summary" hidden></div>
+      <form id="wh-move-form">
+       <label>Mouvement de stock <small>−20 = sortie; +20 = réception</small>
+        <input name="delta" id="wh-delta" type="text" inputmode="decimal" placeholder="-20" required>
+       </label>
+       <label>Motif / chantier
+        <input name="reason" id="wh-reason" type="text" maxlength="300" required placeholder="Livraison chantier, réception fournisseur, correction…">
+       </label>
+       <div id="wh-preview" class="wh-preview" role="status"></div>
+       <button id="wh-submit" class="wh-primary" type="submit" disabled>Confirmer le mouvement</button>
+       <p class="wh-hint">Chaque mouvement est confirmé par le serveur, inscrit à l’historique et protégé contre les doubles clics ou les coupures de réseau.</p>
+      </form>
+      <section><h3>Derniers mouvements</h3><div id="wh-history"></div></section>
+      <section class="wh-card wh-label-preview" aria-label="Aperçu de l’étiquette"><div class="wh-label" id="wh-print-label"><strong>LES REVÊTEMENTS MIR</strong><div id="wh-label-qr"></div><b id="wh-label-sku"></b><span id="wh-label-name"></span><small id="wh-label-url"></small></div></section>
+    </section>
+   </div>
+   <aside class="wh-side-panel">
+    <section class="wh-card">
+     <div class="wh-section-head"><h2>Commandes à préparer</h2><button type="button" id="wh-queue-refresh">Actualiser</button></div>
+     <p class="wh-hint">Les quantités restantes apparaissent pour les lignes de commandes reliées à un article d’inventaire.</p>
+     <div id="wh-queue"></div>
+    </section>
+    <section class="wh-card">
+     <h2>Retrouver un article</h2>
+     <form id="wh-search-form"><label>Nom ou SKU<input id="wh-search" type="search" placeholder="Ex. Mono, vis, solin…"></label><button type="submit">Rechercher</button></form>
+     <div id="wh-results"></div>
+    </section>
+    <section class="wh-card" id="wh-register-section" hidden>
+     <h2>Ajouter une référence à l’inventaire</h2>
+     <p class="wh-hint">Réservé à l’Admin MIR. Réutiliser la référence exacte de l’article ou de la variante, sans remplacer son QR historique.</p>
+     <div class="wh-catalogue-helper" id="wh-catalogue-helper">
+      <h3>Reprendre une référence du catalogue MIR</h3>
+      <label>Rechercher dans le magasin existant<input id="wh-catalogue-query" type="search" placeholder="Ex. Mono, vis James Hardie, Adfast"></label>
+      <label>Article exact<select id="wh-catalogue-select"><option value="">Rechercher un article…</option></select></label>
+      <div class="wh-catalogue-options">
+       <label>Couleur / variante<select id="wh-catalogue-color"><option value="">Sans couleur particulière</option></select></label>
+       <label>Format<select id="wh-catalogue-format"><option value="">Format standard</option></select></label>
+      </div>
+      <button type="button" id="wh-catalogue-use">Reprendre cette référence</button>
+      <p class="wh-hint">Utilise la même identité de variante que les commandes employés. Aucun stock n’est inventé ni importé automatiquement.</p>
+     </div>
+     <form id="wh-register-form">
+      <label>Famille<select name="kind"><option value="hardware">Quincaillerie et accessoires</option><option value="bending">Pliage enregistré</option></select></label>
+      <label>Référence de catalogue exacte<input name="sourceRef" required maxlength="300"></label>
+      <label>SKU entrepôt<input name="sku" required maxlength="80"></label>
+      <label>Nom<input name="name" required maxlength="180"></label>
+      <label>Unité<input name="unit" value="pièce" required maxlength="40"></label>
+      <label>Pas de quantité<input name="step" type="number" min="0.001" max="1000" step="0.001" value="1" required></label>
+      <button type="submit">Créer la fiche et son QR permanent</button>
+     </form>
+    </section>
+   </aside>
+  </div>
+ </section>
+</main>
+<footer class="wh-footer">Les Revêtements MIR · Suivi des stocks réservé à l’équipe autorisée · Aucune déduction locale non synchronisée</footer>
+<div id="wh-live" class="wh-toast" role="status" aria-live="polite"></div>
+</body></html>
