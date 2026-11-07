@@ -1,0 +1,51 @@
+/* MIR Coordination — style et identité du site GitHub MIR officiel. */
+body.mir-coordination{--co-ink:#18251d;--co-green:#348511;--co-muted:#5b695d;--co-border:#dfe5dc;--co-base:#fafaf7;--co-soft:#f3f6f0;margin:0;background:var(--co-base);color:var(--co-ink);font-family:Arial,Helvetica,sans-serif}
+.mir-coordination *{box-sizing:border-box}.mir-coordination button,.mir-coordination input,.mir-coordination select,.mir-coordination textarea{font:inherit}
+.mir-coordination button{border:1px solid #c0cdbd;border-radius:6px;padding:10px 13px;background:#fff;color:var(--co-ink);font-size:13px;font-weight:750;cursor:pointer;min-height:43px}
+.mir-coordination button:disabled{opacity:.48;cursor:not-allowed}
+.mir-coordination .co-primary,.mir-coordination button.co-primary{background:var(--co-green);border-color:var(--co-green);color:white}
+.mir-coordination :is(button,input,select,textarea,a):focus-visible{outline:3px solid var(--co-green);outline-offset:2px}
+.mir-coordination label{display:flex;flex-direction:column;gap:5px;font-size:12px;font-weight:700;min-width:0}
+.mir-coordination :is(input,select,textarea){border:1px solid #bdcbbb;border-radius:6px;background:#fff;padding:10px;min-height:43px;min-width:0;width:100%;font-size:16px}
+.mir-coordination textarea{resize:vertical}
+.mir-coordination [hidden]{display:none!important}
+.co-header{background:#fff;display:flex;align-items:center;gap:18px;justify-content:space-between;padding:10px clamp(14px,2.3vw,30px);border-bottom:1px solid var(--co-border)}
+.co-header img{max-width:190px;height:auto}.co-header-title{flex:1}.co-header-title h1{margin:1px 0;font-size:clamp(18px,2vw,25px)}.co-header-title small,.co-eyebrow{color:var(--co-green);font-size:10px;letter-spacing:.09em;font-weight:800}
+.co-header nav{display:flex;flex-wrap:wrap;gap:13px}.co-header nav a{color:var(--co-ink);text-decoration:none;font-weight:700;font-size:12px;border-bottom:1px solid #bfd5b5;padding-bottom:4px}
+.co-page{padding:12px clamp(12px,2vw,26px);max-width:1660px;margin:0 auto}
+.co-card{background:#fff;border:1px solid var(--co-border);border-radius:11px;padding:14px;margin-bottom:12px;box-shadow:0 8px 24px rgba(12,44,15,.035)}
+.co-card h2{font-size:19px;margin:0 0 8px;letter-spacing:-.02em}.co-card h3{font-size:16px;margin:0 0 7px}
+.co-card p{font-size:12px;line-height:1.52;color:var(--co-muted);margin:7px 0}
+#co-status{font-size:12px;color:#476248;margin:0 0 9px;min-height:16px}.co-login{max-width:780px;display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:30px auto}.co-login p{font-size:14px}.co-login form{display:grid;align-content:center;gap:12px}
+.co-workspace{display:flex;flex-direction:column;min-height:0}.co-toolbar{display:flex;align-items:end;gap:9px;padding:0 0 10px;flex-wrap:wrap}.co-toolbar>label{max-width:310px;flex:1 1 210px}.co-toolbar-status{flex:1;color:var(--co-muted);font-size:11px}.co-toolbar button{min-width:90px}
+.co-layout{display:grid;grid-template-columns:minmax(235px,.8fr) minmax(370px,1.8fr) minmax(240px,.8fr);gap:12px;align-items:start;min-height:0}
+.co-layout>*,.co-detail-column{min-width:0}.co-card-header,.co-detail-top{display:flex;justify-content:space-between;gap:10px;align-items:start}
+.co-card-header #co-count{font-weight:800;color:var(--co-green);font-size:21px}.co-search{margin:12px 0}.co-filters{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:12px}.co-filters button{min-height:36px;font-size:11px;padding:7px 8px}
+.co-filters [aria-pressed="true"],.co-order[aria-current="true"]{background:#ecf5e7!important;border-color:var(--co-green)!important}
+.co-scroll-list{overflow-y:auto;max-height:64dvh;scrollbar-width:thin}.co-order{width:100%;display:block;text-align:left;padding:12px 8px!important;border-radius:8px!important;margin-bottom:5px}
+.co-order strong{display:block;font-size:14px}.co-order small{display:block;font-size:11px;color:var(--co-muted);margin-top:3px;font-weight:500}.co-order em{display:inline-block;font-size:10px;font-weight:750;color:#3d5e42;font-style:normal;margin-top:5px}
+.co-detail-top h2{font-size:23px;margin:4px 0}.co-detail-operations{display:flex;gap:7px;flex-wrap:wrap;justify-content:end}.co-detail-operations a{border:1px solid #becab8;padding:11px;border-radius:6px;text-decoration:none;font-size:12px;font-weight:750;color:var(--co-ink)}
+.co-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;margin:12px 0}.co-metrics>div{border-radius:8px;background:#f1f6ec;padding:9px;min-width:0}.co-metrics span{display:block;font-size:10px;color:var(--co-muted)}.co-metrics strong{display:block;font-size:20px;margin-top:3px;font-variant-numeric:tabular-nums}
+.co-card details{border-top:1px solid var(--co-border);padding-top:12px;margin-top:12px}.co-card summary{font-size:14px;font-weight:800;cursor:pointer;padding-bottom:9px}
+.co-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.co-fields .co-wide{grid-column:1/-1}.co-card form button[type=submit]{margin-top:9px}.co-lines{margin-top:18px}.co-lines header p{margin:0 0 12px}.co-line{border:1px solid var(--co-border);padding:12px;border-radius:9px;margin-bottom:12px;background:#fbfcf9}
+.co-line h4{margin:0 0 4px;font-size:15px}.co-line .co-line-meta{display:flex;gap:12px;flex-wrap:wrap;font-size:11px;color:var(--co-muted)}
+.co-line .co-route-grid{display:grid;grid-template-columns:minmax(90px,1fr) minmax(95px,1fr) minmax(130px,1.2fr);gap:7px;align-items:end;margin-top:10px}
+.co-route-grid .co-route-label{font-size:10px;text-transform:uppercase;letter-spacing:.03em}.co-route-grid input,.co-route-grid select{min-height:42px}
+.co-external-row{display:grid;grid-template-columns:1.4fr .65fr auto;gap:6px;margin:7px 0;align-items:end}.co-external-row button{font-size:11px;min-height:42px}
+.co-route-actions,.co-add-actions{display:flex;align-items:center;justify-content:space-between;gap:7px;flex-wrap:wrap;margin-top:7px}.co-error{color:#a33925!important;font-weight:700}
+.co-routes-summary,.co-event{padding:7px 0;border-bottom:1px solid var(--co-border);font-size:12px}
+.co-route-po{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-top:6px;padding:7px;background:#f0f5ed;border-radius:6px}.co-route-po strong{font-size:12px}.co-route-po button{min-height:34px;font-size:11px}
+.co-inline-add{padding:9px;margin-top:8px;background:#f4f7ef;border-radius:7px}.co-inline-add input{max-width:170px}
+.co-small{font-size:11px!important}.co-empty{padding:30px}.co-eyebrow{margin:0 0 5px!important}.co-notification-card{border-top:3px solid var(--co-green)}.co-event strong{color:var(--co-ink)}.co-event time{font-size:10px;color:var(--co-muted);display:block}
+.co-badge{display:inline-flex;border:1px solid #c9d8c5;padding:4px 6px;border-radius:100px;font-size:10px;color:#315c33;font-weight:750}
+.co-footer{text-align:center;font-size:11px;padding:8px 12px;color:var(--co-muted)}#co-toast:not(:empty){position:fixed;z-index:30;bottom:12px;left:50%;transform:translateX(-50%);background:#164c2c;color:white;padding:12px 16px;max-width:90%;border-radius:7px;font-size:13px}
+@media(min-width:1180px) and (min-height:700px){
+ body.mir-coordination:has(#co-workspace:not([hidden])){height:100dvh;max-height:100dvh;display:flex;flex-direction:column;overflow:hidden}
+ .co-header,.co-footer{flex:none}.co-page{flex:1 1 auto;min-height:0;width:100%;display:flex;flex-direction:column;overflow:hidden}
+ .co-workspace{flex:1 1 auto;min-height:0}.co-layout{flex:1 1 auto;min-height:0}
+ .co-layout>.co-card,.co-layout>.co-side-panel,.co-layout>.co-detail-column{height:100%;min-height:0;overflow-y:auto;scrollbar-width:thin}
+ .co-scroll-list{max-height:none;overflow:visible}
+}
+@media(max-width:1179px){.co-layout{grid-template-columns:minmax(235px,.82fr) minmax(0,1.8fr)}.co-side-panel{grid-column:1/-1;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}}
+@media(max-width:780px){.co-header{flex-wrap:wrap}.co-header nav{width:100%}.co-layout{grid-template-columns:1fr}.co-side-panel{display:block}.co-login{grid-template-columns:1fr}.co-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.co-route-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}.co-route-grid label:last-child{grid-column:1/-1}}
+@media(max-width:430px){.co-fields{grid-template-columns:1fr}.co-fields .co-wide{grid-column:auto}.co-external-row{grid-template-columns:1fr 90px auto}.co-header-title h1{font-size:18px}.co-detail-top{flex-wrap:wrap}}

@@ -194,7 +194,7 @@ declare ln mir_core.order_lines;item mir_core.warehouse_skus;ord mir_core.orders
 end$$;
 
 create function public.mir_warehouse_search(org uuid,term text) returns jsonb
-language plpgsql stable security definer set search_path=pg_catalog,mir_core as $
+language plpgsql stable security definer set search_path=pg_catalog,mir_core as $$
 declare out jsonb;q text;begin
  if not mir_core.warehouse_allowed(org) then raise exception 'Accès Entrepôt requis' using errcode='42501';end if;
  q:=left(btrim(coalesce(term,'')),100);
@@ -208,12 +208,12 @@ declare out jsonb;q text;begin
  and (q='' or s.sku ilike '%'||q||'%' or s.name ilike '%'||q||'%')
  order by s.name limit 40)x;
  return out;
-end$;
+end$$;
 
 -- Les commandes employé sont reliées automatiquement UNIQUEMENT lorsqu'elles
 -- enregistrent l'identité exacte de variante. Jamais de rapprochement par nom.
 create function mir_core.warehouse_auto_link_line() returns trigger
-language plpgsql security definer set search_path=pg_catalog,mir_core as $
+language plpgsql security definer set search_path=pg_catalog,mir_core as $$
 declare candidate text;matched uuid;kind text;begin
  select o.kind into kind from mir_core.orders o
  where o.organization_id=new.organization_id and o.id=new.order_id;
@@ -229,7 +229,7 @@ declare candidate text;matched uuid;kind text;begin
   values(new.organization_id,new.id,matched) on conflict do nothing;
  end if;
  return new;
-end$;
+end$$;
 revoke all on function mir_core.warehouse_auto_link_line() from public,anon,authenticated;
 create trigger mir_warehouse_link_employee_lines
  after insert on mir_core.order_lines

@@ -1,0 +1,72 @@
+<!doctype html><html lang="fr-CA"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>MIR — Coordination des commandes</title>
+<link rel="stylesheet" href="mir-home-premium.css?v=20261105">
+<link rel="stylesheet" href="mir-client-header.css?v=1-harmony">
+<link rel="stylesheet" href="mir-client-signature.css?v=1-harmony">
+<link rel="stylesheet" href="coordination.css?v=1">
+<script src="shared-config.js" defer></script>
+<script src="vendor/supabase-client.js" defer></script>
+<script src="mir-coordination-client.js?v=1" defer></script>
+<script src="mir-order-coordination.js?v=1" defer></script>
+<script src="coordination-app.js?v=1" defer></script>
+</head><body class="mir-signature mir-coordination">
+<header class="co-header">
+<a href="index.html" aria-label="Accueil Les Revêtements MIR"><img src="assets/MIR-logo-officiel-original.svg" alt="Les Revêtements MIR" width="220" height="56"></a>
+<div class="co-header-title"><small>ÉQUIPE MIR · GESTION DES COMMANDES</small><h1>Coordination du matériel</h1></div>
+<nav aria-label="Navigation MIR"><a href="entrepot.html">Entrepôt</a><a href="production.html">Atelier de pliage</a><a href="chantier.html">Commandes employés</a></nav>
+</header>
+<main class="co-page">
+<p id="co-status" role="status" aria-live="polite">Vérification des accès Coordination MIR…</p>
+<section class="co-login co-card" id="co-login" hidden>
+<div><p class="co-eyebrow">ACCÈS ADJOINTE / ADMIN</p><h2>Connexion aux commandes</h2>
+<p>Seuls les comptes MIR autorisés peuvent répartir les quantités, modifier les commandes en attente et préparer les bons fournisseurs.</p></div>
+<form id="co-login-form"><label>Courriel<input type="email" name="email" autocomplete="username" required></label>
+<label>Mot de passe<input type="password" name="password" autocomplete="current-password" required></label>
+<button type="submit" class="co-primary">Se connecter</button></form>
+</section>
+<section class="co-workspace" id="co-workspace" hidden>
+<div class="co-toolbar">
+<label>Organisation<select id="co-organization" aria-label="Choisir l'organisation MIR"></select></label>
+<span class="co-toolbar-status">Les changements sont enregistrés côté serveur avec un historique.</span>
+<button type="button" id="co-refresh">Actualiser</button><button type="button" id="co-signout">Déconnexion</button>
+</div>
+<div class="co-layout">
+<aside class="co-card co-inbox">
+<div class="co-card-header"><div><p class="co-eyebrow">COMMANDES EMPLOYÉS</p><h2>À traiter</h2></div><span id="co-count">0</span></div>
+<label class="co-search">Rechercher une commande, un chantier ou une équipe<input id="co-search" type="search" placeholder="Ex. 353, équipe, adresse…" autocomplete="off"></label>
+<div class="co-filters" role="group" aria-label="Filtrer les commandes"><button type="button" data-co-filter="all" aria-pressed="true">Toutes</button><button type="button" data-co-filter="new">Non triées</button><button type="button" data-co-filter="shipped">Entrepôt expédié</button></div>
+<div id="co-orders" class="co-scroll-list" aria-live="polite"></div>
+</aside>
+<div class="co-detail-column">
+<section id="co-none" class="co-card co-empty"><p class="co-eyebrow">COMMANDES MIR</p><h2>Une commande. Plusieurs destinations.</h2><p>Choisis une demande employé à gauche. Répartis ses lignes vers l’entrepôt ou les fournisseurs, puis prépare les bons tout en gardant un seul numéro de commande.</p></section>
+<section id="co-detail" class="co-card" hidden>
+<div class="co-detail-top"><div><p class="co-eyebrow">COMMANDE EMPLOYÉ</p><h2 id="co-order-heading"></h2><div id="co-overall-status" role="status"></div></div><div class="co-detail-operations"><button type="button" id="co-order-reload">Recharger</button><a id="co-entrepot-link" href="entrepot.html">Ouvrir l'entrepôt</a></div></div>
+<div class="co-metrics" id="co-metrics"></div>
+<details id="co-info" open><summary>Chantier, livraison et équipe</summary>
+<form id="co-meta"><div class="co-fields">
+<label>Numéro de job / chantier<input name="job" maxlength="200" required placeholder="No de job"></label>
+<label>Équipe<input name="team" maxlength="200" placeholder="Nom de l'équipe"></label>
+<label class="co-wide">Adresse de livraison<input name="address" maxlength="360" placeholder="Adresse exacte pour l'expédition"></label>
+<label>Priorité<select name="priority"><option value="normal">Normale</option><option value="urgent">Urgente</option></select></label>
+<label class="co-wide">Notes internes<textarea name="notes" maxlength="800" rows="2"></textarea></label>
+</div><button type="submit">Enregistrer les détails du chantier</button></form>
+</details>
+<section class="co-lines"><header><h3>Répartition des articles</h3><p>Une même ligne peut être partagée entre l'entrepôt et plusieurs fournisseurs. La somme ne doit pas dépasser les quantités commandées.</p></header>
+<div id="co-line-list"></div>
+</section>
+<details id="co-history"><summary>Historique et modifications</summary><div id="co-events"></div></details>
+</section>
+</div>
+<aside class="co-side-panel">
+<section class="co-card"><p class="co-eyebrow">RÈGLE DE PRÉPARATION</p><h2>Entrepôt</h2><p>Le magasinier voit les articles qui lui sont affectés, les nouveaux ajouts et les informations du chantier. Une sortie QR n'est comptée qu'une fois.</p><p class="co-small">Le bouton « Expédier » ferme la tâche Entrepôt, mais la commande globale reste ouverte tant que des fournisseurs ont des articles à remettre.</p></section>
+<section class="co-card"><p class="co-eyebrow">FABRICATION EXTERNE</p><h2>Bons fournisseurs</h2><p>Chaque fournisseur reçoit son propre bon relié à la commande employé.</p><div id="co-pos"></div><p class="co-small">Brouillons seulement : aucun bon n'est envoyé sans validation distincte.</p></section>
+<section class="co-card co-notification-card"><p class="co-eyebrow">MODIFICATIONS</p><h2>À communiquer</h2><div id="co-notifications"></div></section>
+</aside>
+</div>
+</section>
+</main>
+<footer class="co-footer">Les Revêtements MIR · Accès réservé aux membres autorisés · Données serveur uniquement</footer>
+<div id="co-toast" role="status" aria-live="polite"></div>
+</body></html>

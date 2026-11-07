@@ -48,6 +48,32 @@
   async function register(org,data){
    return rpc('mir_warehouse_register',{org,kind:data.kind,source_ref:data.sourceRef,sku_code:data.sku,display_name:data.name,unit_name:data.unit,step:data.step});
   }
+  async function coordinationQueue(org){return rpc('mir_coordination_warehouse_queue',{org});}
+  async function acknowledge(org,coordId){return rpc('mir_coordination_ack',{org,coord_id:coordId});}
+  async function ship(org,coordId,revision){
+   const user=await verified();
+   if(!UUID.test(org||'')||!UUID.test(coordId||'')||!Number.isSafeInteger(Number(revision))||revision<1)
+     throw Error('Commande ou révision invalide.');
+   const payload={org,coord_id:coordId,expected_revision:Number(revision)};
+   const key='mir_entrepot_shipping_pending_v1_'+user.id;
+   let old;try{old=JSON.parse(storage.getItem(key)||'null');}catch{throw Error('Reprise d’expédition indisponible : contacter le responsable.');}
+   const signature=JSON.stringify(payload);
+   if(old&&old.signature!==signature)throw Error('Une expédition non confirmée attend reprise : impossible de créer un deuxième départ.');
+   const operation=old?.id||uuid();
+   if(!UUID.test(operation||''))throw Error('Référence d’expédition invalide.');
+   if(!old){
+    const value=JSON.stringify({id:operation,signature,org});
+    try{storage.setItem(key,value);if(storage.getItem(key)!==value)throw Error('storage');}
+    catch{throw Error('Stockage de reprise indisponible : aucune expédition transmise.');}
+   }
+   try{
+    const result=await rpc('mir_coordination_ship',{...payload,request_id:operation});
+    storage.removeItem(key);return result;
+   }catch(error){
+    if(['22023','42501','40001','23505'].includes(error?.code))try{storage.removeItem(key);}catch{}
+    throw error;
+   }
+  }
   async function move({org,token,lineId=null,delta,reason}){
    const user=await verified();
    if(!UUID.test(org||'')||!UUID.test(token||'')||lineId&&!UUID.test(lineId))throw Error('Référence de stock ou de commande invalide.');
@@ -77,7 +103,7 @@
    }
   }
   function close(){changed();subscription?.data?.subscription?.unsubscribe?.();}
-  return Object.freeze({login,logout,memberships,snapshot,search,queue,register,move,close,checkPending:async()=>pending((await verified()).id),version:'1.0.0'});
+  return Object.freeze({login,logout,memberships,snapshot,search,queue,coordinationQueue,acknowledge,ship,register,move,close,checkPending:async()=>pending((await verified()).id),version:'1.1.0'});
  }
  return Object.freeze({create});
 });

@@ -14,6 +14,7 @@
  <script src="mir-warehouse-core.js?v=1" defer></script>
  <script src="mir-warehouse-client.js?v=1" defer></script>
  <script src="entrepot-app.js?v=1" defer></script>
+ <script src="mir-warehouse-coordination-ui.js?v=1" defer></script>
 </head>
 <body class="mir-signature mir-warehouse">
 <header class="mir-warehouse-header">
@@ -68,6 +69,11 @@
     </section>
    </div>
    <aside class="wh-side-panel">
+    <section class="wh-card" id="wh-coordination-panel">
+     <div class="wh-section-head"><div><p class="wh-kicker">COMMANDES MIR</p><h2>Préparations et modifications</h2></div><span id="wh-unread-count" class="wh-notification-count" aria-live="polite">0</span></div>
+     <p class="wh-hint">Job, adresse et équipe. Toute modification doit être reconnue avant d’expédier.</p>
+     <div id="wh-coordination-tasks"></div>
+    </section>
     <section class="wh-card">
      <div class="wh-section-head"><h2>Commandes à préparer</h2><button type="button" id="wh-queue-refresh">Actualiser</button></div>
      <p class="wh-hint">Les quantités restantes apparaissent pour les lignes de commandes reliées à un article d’inventaire.</p>

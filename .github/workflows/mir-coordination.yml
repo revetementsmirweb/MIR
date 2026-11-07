@@ -1,0 +1,53 @@
+name: MIR Coordination — commande mère, Entrepôt, fournisseurs
+on:
+  push:
+    branches:
+      - moon/mir-commandes-coordination-20261107
+  pull_request:
+    branches:
+      - moon/mir-entrepot-qr-inventaire-20261107
+    paths:
+      - 'dist/coordination.*'
+      - 'dist/mir-order-coordination*'
+      - 'dist/mir-coordination-client.js'
+      - 'dist/entrepot*'
+      - 'dist/mir-warehouse-client.js'
+      - 'supabase/proposals/202611070007_order_coordination.sql'
+      - 'tests/mir-order-coordination*'
+      - 'tests/mir-coordination-postgres.cjs'
+      - 'tests/mir-coordination-browser.cjs'
+      - '.github/workflows/mir-coordination.yml'
+permissions:
+  contents: read
+jobs:
+  domain:
+    name: Contrats de routage, livraison et notifications
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Node syntax and métier
+        run: |
+          node --check dist/mir-order-coordination.js
+          node --check tests/mir-order-coordination.cjs
+          node tests/mir-order-coordination.cjs
+      - name: PostgreSQL réel jetable, droits et opérations atomiques
+        run: |
+          npm ci --ignore-scripts --no-audit --no-fund --prefix tools/database
+          node tests/mir-coordination-postgres.cjs
+      - name: Interface PC et mobile (Auth/RPC simulées explicitement)
+        run: |
+          node --check dist/coordination-app.js
+          node --check dist/mir-coordination-client.js
+          node --check dist/mir-warehouse-coordination-ui.js
+          node --check tests/mir-coordination-browser.cjs
+          npm install --no-save --package-lock=false --ignore-scripts --no-audit --no-fund playwright@1.58.2
+          node tests/mir-coordination-browser.cjs
+          node tests/mir-warehouse-browser.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mir-coordination-screenshots
+          path: |
+            artifacts/mir-coordination-*.png
+            artifacts/mir-entrepot-*.png
+          if-no-files-found: ignore
