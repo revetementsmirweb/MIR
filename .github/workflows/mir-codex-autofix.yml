@@ -1,0 +1,143 @@
+name: MIR — Correctifs Codex proposés
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'dist/mir-order-coordination.js'
+      - 'dist/mir-warehouse-core.js'
+      - 'tests/mir-order-coordination.cjs'
+      - 'tests/mir-warehouse-core.cjs'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mir-codex-autofix-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  tests:
+    if: github.repository == 'revetementsmirweb/MIR' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Tests métier Coordination et Entrepôt
+        run: |
+          failed=0
+          node tests/mir-order-coordination.cjs || failed=1
+          node tests/mir-warehouse-core.cjs || failed=1
+          exit "$failed"
+
+  proposer:
+    if: >-
+      ${{ failure() && needs.tests.result == 'failure' &&
+          github.repository == 'revetementsmirweb/MIR' &&
+          github.ref == 'refs/heads/main' && vars.MIR_CODEX_AUTOFIX == 'true' }}
+    needs: tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    outputs:
+      correctif: ${{ steps.patch.outputs.correctif }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Vérifier que l’accès API est configuré
+        id: api
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          if [[ -n "$OPENAI_API_KEY" ]]; then
+            echo 'configured=true' >> "$GITHUB_OUTPUT"
+          else
+            echo '::notice::Configurer le secret OPENAI_API_KEY pour permettre un correctif Codex.'
+          fi
+      - name: Proposer un correctif
+        if: steps.api.outputs.configured == 'true'
+        uses: openai/codex-action@bdf19a4a223ec2549a3e2274a0cf61556bc07675 # v1
+        with:
+          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+          sandbox: workspace-write
+          safety-strategy: drop-sudo
+          prompt: |
+            Reproduis l'échec avec node tests/mir-order-coordination.cjs
+            et node tests/mir-warehouse-core.cjs. Corrige uniquement la cause
+            dans dist/mir-order-coordination.js ou dist/mir-warehouse-core.js.
+            Garde les tests et le workflow intacts. Exécute les deux suites.
+            Travaille localement, sans accès aux services MIR ni opérations Git distantes.
+      - name: Valider et préparer le patch
+        if: steps.api.outputs.configured == 'true'
+        id: patch
+        run: |
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          test -z "$(git ls-files --others --exclude-standard)"
+          if git diff --quiet HEAD; then
+            exit 0
+          fi
+          while IFS= read -r path; do
+            case "$path" in
+              dist/mir-order-coordination.js|dist/mir-warehouse-core.js) ;;
+              *) echo "::error::Le patch touche un fichier hors périmètre."; exit 1 ;;
+            esac
+          done < <(git diff --name-only HEAD)
+          test -z "$(git diff --summary HEAD)"
+          git diff --check HEAD
+          node tests/mir-order-coordination.cjs
+          node tests/mir-warehouse-core.cjs
+          git diff HEAD -- dist/mir-order-coordination.js dist/mir-warehouse-core.js > "$RUNNER_TEMP/mir-codex.patch"
+          test -s "$RUNNER_TEMP/mir-codex.patch"
+          echo 'correctif=true' >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: steps.patch.outputs.correctif == 'true'
+        with:
+          name: mir-codex-correctif
+          path: ${{ runner.temp }}/mir-codex.patch
+          if-no-files-found: error
+          retention-days: 3
+
+  brouillon:
+    needs: proposer
+    if: >-
+      ${{ always() && needs.proposer.result == 'success' &&
+          needs.proposer.outputs.correctif == 'true' &&
+          github.repository == 'revetementsmirweb/MIR' && github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: mir-codex-correctif
+          path: ${{ runner.temp }}
+      - name: Ouvrir une pull request brouillon
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          current_main="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/main" --jq '.object.sha')"
+          if [[ "$current_main" != "$GITHUB_SHA" ]]; then
+            echo '::notice::main a avancé depuis les tests.'
+            exit 0
+          fi
+          git apply --index "$RUNNER_TEMP/mir-codex.patch"
+          while IFS= read -r path; do
+            case "$path" in
+              dist/mir-order-coordination.js|dist/mir-warehouse-core.js) ;;
+              *) echo "::error::Le patch touche un fichier hors périmètre."; exit 1 ;;
+            esac
+          done < <(git diff --cached --name-only)
+          test -z "$(git diff --cached --summary)"
+          git diff --cached --check
+          branch="codex/mir-autofix-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          git switch -c "$branch"
+          git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m 'Proposer un correctif pour les tests métier MIR'
+          git push origin "HEAD:refs/heads/$branch"
+          printf 'Correctif proposé après un échec des tests métier MIR.\n\nExécution et tests : %s/%s/actions/runs/%s\n' "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_RUN_ID" > "$RUNNER_TEMP/mir-pr.md"
+          gh pr create --draft --base main --head "$branch" --title 'Correctif proposé — tests métier MIR' --body-file "$RUNNER_TEMP/mir-pr.md"
